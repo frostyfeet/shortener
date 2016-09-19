@@ -2,32 +2,42 @@ package main
 
 import (
 	"fmt"
-	// Import the Radix.v2 redis package.
-	"github.com/mediocregopher/radix.v2/redis"
-	"log"
+	"github.com/shortener/recordstore/test"
+	"net/http"
+	"strconv"
 )
 
 func main() {
-	// Establish a connection to the Redis server listening on port 6379 of the
-	// local machine. 6379 is the default port, so unless you've already
-	// changed the Redis configuration file this should work.
-	conn, err := redis.Dial("tcp", "localhost:6379")
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Importantly, use defer to ensure the connection is always properly
-	// closed before exiting the main() function.
-	defer conn.Close()
+	http.HandleFunc("/album", showAlbum)
+	http.ListenAndServe(":3000", nil)
+}
 
-	// Send our command across the connection. The first parameter to Cmd()
-	// is always the name of the Redis command (in this example HMSET),
-	// optionally followed by any necessary arguments (in this example the
-	// key, followed by the various hash fields and values).
-	resp := conn.Cmd("HMSET", "album:1", "title", "Lalala", "artist", "Jimi Hendrix", "price", 4.95, "likes", 8)
-	// Check the Err field of the *Resp object for any errors.
-	if resp.Err != nil {
-		log.Fatal(resp.Err)
+func showAlbum(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		w.Header().Set("Allow", "GET")
+		http.Error(w, http.StatusText(405), 405)
+		return
 	}
 
-	fmt.Println("Electric Ladyland added!")
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+	if _, err := strconv.Atoi(id); err != nil {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	bk, err := models.FindAlbum(id)
+	if err == models.ErrNoAlbum {
+		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	// Write the album details as plain text to the client.
+	fmt.Fprintf(w, "%s by %s: £%.2f [%d likes] \n", bk.Title, bk.Artist, bk.Price, bk.Likes)
 }
