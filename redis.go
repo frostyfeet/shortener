@@ -23,7 +23,7 @@ func main() {
 	// is always the name of the Redis command (in this example HMSET),
 	// optionally followed by any necessary arguments (in this example the
 	// key, followed by the various hash fields and values).
-	resp := conn.Cmd("HMSET", "album:1", "title", "Electric Ladyland", "artist", "Jimi Hendrix", "price", 4.95, "likes", 8)
+	resp := conn.Cmd("HMSET", "album:1", "title", "Lalala", "artist", "Jimi Hendrix", "price", 4.95, "likes", 8)
 	// Check the Err field of the *Resp object for any errors.
 	if resp.Err != nil {
 		log.Fatal(resp.Err)
