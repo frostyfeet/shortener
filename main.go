@@ -10,8 +10,39 @@ import (
 
 func main() {
 	http.HandleFunc("/", showUrl)
-	http.HandleFunc("/api/", showApi)
-	http.ListenAndServe(":3000", nil)
+	http.HandleFunc("/api/create", writeUrl)
+	http.ListenAndServe(":3100", nil)
+}
+
+func writeUrl(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, http.StatusText(405), 405)
+		return
+	}
+	url := r.URL.Query().Get("url")
+	hash := r.URL.Query().Get("hash")
+	api := r.URL.Query().Get("api")
+	fmt.Println(url, hash)
+	if hashCheck(hash) && api == "PDQRFYiWuumLTzCl6t8FzMy1d55IICih" {
+		fmt.Println(models.PutUrl(url, hash))
+		fmt.Println("URL inserted:", url, "with hash:", hash)
+	} else {
+		fmt.Println("The URL is wrong")
+	}
+}
+
+func hashCheck(hash string) bool {
+	re := regexp.MustCompile("^[a-zA-Z0-9]*$")
+	if !re.MatchString(hash) {
+		fmt.Println("Non alphanumeric characters detected")
+		return false
+	}
+	if len(hash) > 40 || len(hash) == 0 {
+		fmt.Println("Hash too long")
+		return false
+	} else {
+		return true
+	}
 }
 
 func showUrl(w http.ResponseWriter, r *http.Request) {
